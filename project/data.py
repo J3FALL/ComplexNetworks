@@ -2,6 +2,7 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 
 
 def create_graph():
@@ -43,7 +44,7 @@ def fix_ids(users, repos, edges):
 
 
 def user_degree_distribution(g, users):
-    degs = sorted(g.degree(users).values(), reverse=True)
+    degs = sorted(list(g.degree(users).values()), reverse=True)
     degs_count = Counter(degs)
     deg, cnt = zip(*degs_count.items())
 
@@ -57,7 +58,7 @@ def user_degree_distribution(g, users):
 
 
 def repo_degree_distribution(g, repos):
-    degs = sorted(g.degree(repos).values(), reverse=True)
+    degs = sorted(list(g.degree(repos).values()), reverse=True)
     degs_count = Counter(degs)
     deg, cnt = zip(*degs_count.items())
 
@@ -70,7 +71,40 @@ def repo_degree_distribution(g, repos):
     plt.show()
 
 
+def distance_distribution(g):
+    distances = nx.shortest_path_length(g)
+
+    n = g.number_of_nodes()
+    d = list()
+    for i in range(1, n):
+        for j in range(1, n):
+            d.append(distances[i][j])
+
+
+def diameter(g):
+    return nx.diameter(g)
+
+
+def components(g):
+    comps = sorted(nx.connected_components(g), key=len, reverse=True)
+
+    for c in comps:
+        print("Component size: %d" % len(c))
+        print("Component diameter: %d" % diameter(g.subgraph(c)))
+
+
+def clustering(g):
+    cl = nx.clustering(g)
+    values = np.array(sorted(cl.values()))
+    cum_func = np.cumsum(values)
+
+    print(sorted(cum_func / np.max(cum_func), reverse=True))
+
+
 g, users, repos = create_graph()
 
-user_degree_distribution(g, users)
-repo_degree_distribution(g, repos)
+# user_degree_distribution(g, users)
+# repo_degree_distribution(g, repos)
+# components(g)
+# distance_distribution(g)
+clustering(g)
