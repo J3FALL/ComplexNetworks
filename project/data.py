@@ -103,6 +103,9 @@ def clustering(g):
 
 g, users, repos = create_graph()
 
+print("Nodes: %d" % g.number_of_nodes())
+print("Edges: %d" % g.number_of_edges())
+
 # user_degree_distribution(g, users)
 # repo_degree_distribution(g, repos)
 # components(g)
