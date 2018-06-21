@@ -1,3 +1,4 @@
+import csv
 from collections import Counter
 
 import matplotlib.pyplot as plt
@@ -11,7 +12,26 @@ def create_graph():
 
     g = nx.Graph()
     g.add_edges_from(edges)
-    return g, users, repos
+    return g, users, repos, edges
+
+
+def dump_graph_to_csv(edges, file_name):
+    with open(file_name, 'w') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for e in edges:
+            filewriter.writerow([e[0], e[1]])
+
+
+def fix_csv(file_name):
+    with open(file_name, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        name = file_name.split('.')[0]
+        f = open(name + "_fixed.csv", 'w', newline='')
+        writer = csv.writer(f)
+        for row in reader:
+            if len(row) != 0:
+                writer.writerow(row)
 
 
 def load_graph():
@@ -52,7 +72,7 @@ def user_degree_distribution(g, users):
     plt.title("User degree distribution")
     plt.xlabel('Degree (d)')
     plt.ylabel('Frequency')
-    plt.xscale('symlog')
+    # plt.xscale('symlog')
     plt.yscale('symlog')
     plt.show()
 
@@ -69,6 +89,42 @@ def repo_degree_distribution(g, repos):
     plt.xscale('symlog')
     plt.yscale('symlog')
     plt.show()
+
+
+def reduce_graph(g, users, repos):
+    users_reduced = reduce_users(g, users)
+    repos_reduced = reduce_repos(g, repos)
+
+    nodes = users_reduced + repos_reduced
+
+    sub = g.subgraph(nodes)
+    print(sub.number_of_nodes())
+    print(sub.number_of_edges())
+
+    user_degree_distribution(sub, users_reduced)
+    return sub
+
+
+def reduce_users(g, users):
+    degs = g.degree(users)
+
+    reduced = []
+    for user in degs.keys():
+        if degs[user] >= 5 and degs[user] <= 50:
+            reduced.append(user)
+
+    return reduced
+
+
+def reduce_repos(g, repos):
+    degs = g.degree(repos)
+
+    reduced = []
+    for repo in degs.keys():
+        if degs[repo] >= 5 and degs[repo] <= 100:
+            reduced.append(repo)
+
+    return reduced
 
 
 def distance_distribution(g):
@@ -90,7 +146,7 @@ def components(g):
 
     for c in comps:
         print("Component size: %d" % len(c))
-        print("Component diameter: %d" % diameter(g.subgraph(c)))
+        # print("Component diameter: %d" % diameter(g.subgraph(c)))
 
 
 def clustering(g):
@@ -101,13 +157,24 @@ def clustering(g):
     print(sorted(cum_func / np.max(cum_func), reverse=True))
 
 
-g, users, repos = create_graph()
+# fix_csv()
 
+g, users, repos, edges = create_graph()
+#
 print("Nodes: %d" % g.number_of_nodes())
 print("Edges: %d" % g.number_of_edges())
 
+# dump_graph_to_csv(edges)
+
 # user_degree_distribution(g, users)
 # repo_degree_distribution(g, repos)
+
+# reduce_users(g, users)
+# reduce_repos(g, repos)
+sub = reduce_graph(g, users, repos)
+dump_graph_to_csv(sub.edges(), 'reduced.csv')
+fix_csv('reduced.csv')
+# dump_graph_to_csv(sub.edges())
 # components(g)
 # distance_distribution(g)
-clustering(g)
+# clustering(g)
