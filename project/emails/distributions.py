@@ -39,5 +39,10 @@ def degrees_distribution(graph):
     plt.savefig(FIGURES_PATH + 'degrees_distribution.png')
 
 
+def average_degree(graph):
+    degs = list(graph.degree([node for node in graph.nodes()]).values())
+    return sum(degs) / len(graph.nodes())
+
+
 g = graph_instance()
-degrees_distribution(g)
+print(average_degree(g))
