@@ -44,5 +44,14 @@ def average_degree(graph):
     return sum(degs) / len(graph.nodes())
 
 
+def giant_components(graph):
+    for sub in sorted(nx.connected_components(graph), key=len, reverse=True):
+        print("Component fraction: %.5f with nodes: %d;" % (len(sub) / len(graph.nodes()), len(sub)))
+
+
 g = graph_instance()
 print(average_degree(g))
+
+giant_components(g)
+
+# nx.write_edgelist(g, 'test.csv', data=False)
