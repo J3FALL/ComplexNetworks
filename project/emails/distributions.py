@@ -1,3 +1,4 @@
+import csv
 from collections import Counter
 
 import matplotlib.pyplot as plt
@@ -45,9 +46,15 @@ def average_degree(graph):
     return sum(degs) / len(graph.nodes())
 
 
-def giant_components_distribution(graph):
+def giant_components_distribution(graph, dump_reduced=False):
     fractions = []
-    for sub in sorted(nx.connected_component_subgraphs(graph), key=len, reverse=True):
+
+    components = sorted(nx.connected_component_subgraphs(graph), key=len, reverse=True)
+
+    if dump_reduced:
+        dump_graph(components[0], path='data/reduced_graph.csv')
+
+    for sub in components:
         print("Component fraction: %.5f with nodes: %d; edges: %d" %
               (len(sub.nodes()) / len(graph.nodes()), len(sub.nodes()), len(sub.edges())))
         fractions.append(len(sub.nodes()) / len(graph.nodes()))
@@ -64,7 +71,30 @@ def giant_components_distribution(graph):
     plt.savefig(FIGURES_PATH + 'components_distribution.png')
 
 
-g = graph_instance()
-giant_components_distribution(g)
+def clustering_distribution_from_gephi(path="data/gephi_metrics.csv"):
+    clustering_coeffs = []
+    with open(path) as file:
+        reader = csv.DictReader(file, delimiter=',')
+        for line in reader:
+            clustering_coeffs.append(float(line['clustering']))
 
-# nx.write_edgelist(g, 'test.csv', data=False)
+    clustering_coeffs = sorted(clustering_coeffs)
+    clust_x, clust_y = log_binning(dict(Counter(clustering_coeffs)), 70)
+
+    plt.scatter(clust_x, clust_y, c='r', marker='s', s=25, label='')
+    plt.yscale('log')
+    plt.xlim(0, 1.01)
+    plt.title('Local clustering coefficient distribution')
+    plt.ylabel('Count')
+    plt.xlabel('Clustering coefficient')
+    plt.savefig(FIGURES_PATH + "clustering_distribution.png")
+
+
+def dump_graph(graph, path):
+    nx.write_edgelist(graph, path, data=False)
+
+
+# g = graph_instance()
+# giant_components_distribution(g)
+
+clustering_distribution_from_gephi()
