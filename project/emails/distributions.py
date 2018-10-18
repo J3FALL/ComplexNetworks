@@ -90,6 +90,24 @@ def clustering_distribution_from_gephi(path="data/gephi_metrics.csv"):
     plt.savefig(FIGURES_PATH + "clustering_distribution.png")
 
 
+def betweenness_distribution_from_gephi(path="data/gephi_metrics.csv"):
+    btw = []
+    with open(path) as file:
+        reader = csv.DictReader(file, delimiter=',')
+        for line in reader:
+            btw.append(float(line['betweenesscentrality']))
+
+    plt.figure()
+    btw_x, btw_y = log_binning(dict(Counter(btw)), 70)
+    plt.scatter(btw_x, btw_y, c='r', marker='s', s=25, label='')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title('Betweenness centrality distribution')
+    plt.xlabel('Betweenness centrality')
+    plt.ylabel('Count')
+    plt.savefig(FIGURES_PATH + "betweenness_distribution.png")
+
+
 def dump_graph(graph, path):
     nx.write_edgelist(graph, path, data=False)
 
@@ -97,4 +115,5 @@ def dump_graph(graph, path):
 # g = graph_instance()
 # giant_components_distribution(g)
 
-clustering_distribution_from_gephi()
+# clustering_distribution_from_gephi()
+betweenness_distribution_from_gephi()
