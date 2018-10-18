@@ -2,6 +2,7 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 
 from project.emails.data.utils import log_binning
 
@@ -44,14 +45,26 @@ def average_degree(graph):
     return sum(degs) / len(graph.nodes())
 
 
-def giant_components(graph):
-    for sub in sorted(nx.connected_components(graph), key=len, reverse=True):
-        print("Component fraction: %.5f with nodes: %d;" % (len(sub) / len(graph.nodes()), len(sub)))
+def giant_components_distribution(graph):
+    fractions = []
+    for sub in sorted(nx.connected_component_subgraphs(graph), key=len, reverse=True):
+        print("Component fraction: %.5f with nodes: %d; edges: %d" %
+              (len(sub.nodes()) / len(graph.nodes()), len(sub.nodes()), len(sub.edges())))
+        fractions.append(len(sub.nodes()) / len(graph.nodes()))
+
+    idxs = np.arange(len(fractions))
+
+    fractions_to = 10
+
+    plt.bar(idxs[:fractions_to], fractions[:fractions_to], width=0.5, color='b', label='Fraction of nodes')
+    plt.title('Nodes distribution by components')
+    plt.ylabel('Fraction')
+    plt.yscale('log')
+    plt.xticks(idxs[:fractions_to])
+    plt.savefig(FIGURES_PATH + 'components_distribution.png')
 
 
 g = graph_instance()
-print(average_degree(g))
-
-giant_components(g)
+giant_components_distribution(g)
 
 # nx.write_edgelist(g, 'test.csv', data=False)
