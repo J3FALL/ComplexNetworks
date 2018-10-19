@@ -112,8 +112,32 @@ def dump_graph(graph, path):
     nx.write_edgelist(graph, path, data=False)
 
 
+def graph_from_gephi_edge_list(path):
+    with open(path, 'rb') as file:
+        next(file, '')
+        graph = nx.read_edgelist(file, nodetype=int)
+        return graph
+
+
+def shortest_paths_distribution(graph):
+    nodes = graph.nodes()
+
+    distances = []
+
+    for i in range(len(nodes)):
+        for j in range(i + 1, len(nodes)):
+            dist = nx.shortest_path_length(graph, nodes[i], nodes[j])
+            distances.append([nodes[i], nodes[j], dist])
+            print(nodes[i], nodes[j], dist)
+
+    np.savetxt('data/paths.txt', np.array(distances, dtype=np.int), fmt='%d')
+
+
 # g = graph_instance()
 # giant_components_distribution(g)
 
 # clustering_distribution_from_gephi()
-betweenness_distribution_from_gephi()
+# betweenness_distribution_from_gephi()
+
+g = graph_from_gephi_edge_list("data/reduced_graph.csv")
+shortest_paths_distribution(g)
