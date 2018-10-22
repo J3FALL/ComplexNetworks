@@ -1,14 +1,17 @@
 import csv
+import multiprocessing
 from collections import Counter
+from itertools import repeat
+from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from project.emails.data.utils import log_binning
-
 FILE_PATH = 'data/emails.txt'
 FIGURES_PATH = 'figures/'
+
+import math
 
 
 def graph_instance():
@@ -24,6 +27,30 @@ def edges_from_file(path):
             node_from, node_to = map(int, line.split("\t"))
             edges.append([node_from, node_to])
     return edges
+
+
+def drop_zeros(a_list):
+    return [i for i in a_list if i > 0]
+
+
+def log_binning(counter_dict, bin_count=35):
+    keys = counter_dict.keys()
+    values = counter_dict.values()
+
+    max_x = math.log10(max(keys))
+    max_y = math.log10(max(values))
+    max_base = max([max_x, max_y])
+
+    min_x = math.log10(min(drop_zeros(keys)))
+
+    bins = np.logspace(min_x, max_base, num=bin_count)
+
+    bin_means_y = (np.histogram(list(keys), bins, weights=list(values))[0] /
+                   np.histogram(list(keys), bins)[0])
+    bin_means_x = (np.histogram(list(keys), bins, weights=list(keys))[0] /
+                   np.histogram(list(keys), bins)[0])
+
+    return bin_means_x, bin_means_y
 
 
 def degrees_distribution(graph):
@@ -119,25 +146,38 @@ def graph_from_gephi_edge_list(path):
         return graph
 
 
-def shortest_paths_distribution(graph):
+def all_paths_from(graph, from_idx):
     nodes = graph.nodes()
-
+    print("nodes: %d/%d" % (from_idx, len(nodes)))
     distances = []
+    for to_idx in range(from_idx + 1, len(nodes)):
+        try:
+            dist = nx.shortest_path_length(graph, nodes[from_idx], nodes[to_idx])
+            distances.append(dist)
+        except nx.NetworkXException:
+            print("No path for (%d %d)" % (from_idx, to_idx))
+    return [distances]
 
-    for i in range(len(nodes)):
-        for j in range(i + 1, len(nodes)):
-            dist = nx.shortest_path_length(graph, nodes[i], nodes[j])
-            distances.append([nodes[i], nodes[j], dist])
-            print(nodes[i], nodes[j], dist)
 
-    np.savetxt('data/paths.txt', np.array(distances, dtype=np.int), fmt='%d')
+def shortest_paths_distribution(graph):
+    print(multiprocessing.cpu_count())
+    p = Pool(multiprocessing.cpu_count())
+    # this will take awhile
+    distances = p.starmap(all_paths_from, zip(repeat(graph), [i for i in range(len(graph.nodes()))]))
+
+    p.close()
+    p.join()
+
+    print(len(distances))
+    to_file(distances)
 
 
-# g = graph_instance()
-# giant_components_distribution(g)
+def to_file(distances):
+    with open("data/dist.txt", 'w') as file_handler:
+        for item in distances:
+            file_handler.write("{}\n".format(item))
 
-# clustering_distribution_from_gephi()
-# betweenness_distribution_from_gephi()
 
-g = graph_from_gephi_edge_list("data/reduced_graph.csv")
-shortest_paths_distribution(g)
+if __name__ == '__main__':
+    g = graph_from_gephi_edge_list("data/reduced_graph.csv")
+    shortest_paths_distribution(g)
