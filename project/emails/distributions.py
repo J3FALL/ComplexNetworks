@@ -1,3 +1,4 @@
+import ast
 import csv
 import multiprocessing
 from collections import Counter
@@ -159,7 +160,7 @@ def all_paths_from(graph, from_idx):
     return [distances]
 
 
-def shortest_paths_distribution(graph):
+def calculate_shortest_paths(graph):
     print(multiprocessing.cpu_count())
     p = Pool(multiprocessing.cpu_count())
     # this will take awhile
@@ -178,6 +179,31 @@ def to_file(distances):
             file_handler.write("{}\n".format(item))
 
 
+def shortest_paths_distribution():
+    dist_by_val = Counter()
+
+    with open("data/dist.txt", 'r') as file:
+        idx = 0
+        for line in file:
+            if idx % 10 == 0 and idx != 0:
+                print(idx)
+            data = ast.literal_eval(line)[0]
+            for dist in data:
+                dist_by_val[dist] += 1
+            # print(dist_by_val)
+            idx += 1
+
+    dist_x, dist_y = log_binning(dict(dist_by_val), 50)
+
+    plt.figure()
+    plt.scatter(dist_x, dist_y, c='r', marker='s', s=25, label='')
+    plt.yscale('log')
+    plt.title('Distance Distribution')
+    plt.xlabel('d')
+    plt.ylabel('Count')
+    plt.show()
+    plt.savefig(FIGURES_PATH + 'distances_distribution.png')
+
+
 if __name__ == '__main__':
-    g = graph_from_gephi_edge_list("data/reduced_graph.csv")
-    shortest_paths_distribution(g)
+    shortest_paths_distribution()
