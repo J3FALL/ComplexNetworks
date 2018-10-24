@@ -201,9 +201,21 @@ def shortest_paths_distribution():
     plt.title('Distance Distribution')
     plt.xlabel('d')
     plt.ylabel('Count')
-    plt.show()
     plt.savefig(FIGURES_PATH + 'distances_distribution.png')
 
 
+def assortativity_distribution(graph):
+    assorts = sorted(nx.average_degree_connectivity(graph).items())
+    assort_x, assort_y = log_binning(dict(assorts), 40)
+
+    plt.figure()
+    plt.scatter(assort_x, assort_y, c='r', marker='s', s=25, label='')
+    plt.title('Assortativity')
+    plt.xlabel('k')
+    plt.ylabel('$<k_{nn}>$')
+    plt.savefig(FIGURES_PATH + 'assortativity.png')
+
+
 if __name__ == '__main__':
-    shortest_paths_distribution()
+    g = graph_from_gephi_edge_list("data/reduced_graph.csv")
+    assortativity_distribution(g)
