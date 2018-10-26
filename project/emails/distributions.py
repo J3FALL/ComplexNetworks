@@ -55,7 +55,7 @@ def log_binning(counter_dict, bin_count=35):
 
 
 def degrees_distribution(graph, show=False, return_values=False):
-    degs = sorted(graph.degree([node for node in graph.nodes()]).values(), reverse=True)
+    degs = sorted(list(dict(graph.degree([node for node in graph.nodes()])).values()), reverse=True)
 
     deg_x, deg_y = log_binning(dict(Counter(degs)), 50)
 
@@ -75,7 +75,7 @@ def degrees_distribution(graph, show=False, return_values=False):
 
 
 def average_degree(graph):
-    degs = list(graph.degree([node for node in graph.nodes()]).values())
+    degs = list(dict(graph.degree([node for node in graph.nodes()])).values())
     return sum(degs) / len(graph.nodes())
 
 
