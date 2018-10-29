@@ -63,11 +63,11 @@ def robustness_by_attack(src_graph, nodes_to_remove, measure_frequency):
         graph = attack_degree(graph)
 
         if iteration % measure_frequency == 0:
-            diameter, avg_path_len = diameter_and_avg_path_length(graph)
+            # diameter, avg_path_len = diameter_and_avg_path_length(graph)
             ga_fraction = giant_component_fraction(graph)
 
-            diameters_history.append(diameter)
-            path_len_history.append(avg_path_len)
+            # diameters_history.append(diameter)
+            # path_len_history.append(avg_path_len)
             ga_fraction_history.append(ga_fraction)
 
     print("---- Done: Robustness Check ---- \n")
@@ -97,11 +97,11 @@ def robustness_by_fail(src_graph, number_of_runs, nodes_to_remove, measure_frequ
             graph = attack_degree(graph)
 
             if iteration % measure_frequency == 0:
-                diameter, avg_path_len = diameter_and_avg_path_length(graph)
+                # diameter, avg_path_len = diameter_and_avg_path_length(graph)
                 ga_fraction = giant_component_fraction(graph)
 
-                diameters_on_run.append(diameter)
-                paths_on_run.append(avg_path_len)
+                # diameters_on_run.append(diameter)
+                # paths_on_run.append(avg_path_len)
                 ga_on_run.append(ga_fraction)
 
         diameters_history.append(diameters_on_run)
@@ -128,14 +128,14 @@ def dump_history(file_path, diameters, paths, ga_fractions, fail_mode=False):
     else:
         for run in range(len(diameters)):
             file.write('%d\n' % run)
-            file.write("%s\n" % (" ".join([str(val) for val in diameters[run]])))
-            file.write("%s\n" % (" ".join([str(val) for val in paths[run]])))
+            # file.write("%s\n" % (" ".join([str(val) for val in diameters[run]])))
+            # file.write("%s\n" % (" ".join([str(val) for val in paths[run]])))
             file.write("%s\n" % (" ".join([str(val) for val in ga_fractions[run]])))
 
 
 if __name__ == '__main__':
     g = graph_from_gephi_edge_list("data/reduced_graph.csv")
-    # sub = g.subgraph([idx for idx in range(50)])
+    # sub = g.subgraph([idx for idx in range(200)])
 
-    robustness_by_attack(g, int(0.9 * len(g.nodes())), 50)
+    # robustness_by_attack(g, int(0.9 * len(g.nodes())), 50)
     robustness_by_fail(g, 5, int(0.9 * len(g.nodes())), 50)

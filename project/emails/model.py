@@ -15,13 +15,14 @@ def simple_barabasi_albert(graph, edges):
     return ba
 
 
-def extended_barabasi_albert(graph):
+def extended_barabasi_albert(graph, path):
     nodes = len(graph.nodes())
     p = 0.837
     q = 0.002
     # this will take awhile-awhile-awhile
-    ba = nx.extended_barabasi_albert_graph(n=nodes, m=1, p=p, q=q)
-    dump_graph(ba, 'data/extended_ba.csv')
+    ba = nx.extended_barabasi_albert_graph(n=int(nodes / 10), m=1, p=p, q=q)
+    # dump_graph(ba, 'data/extended_ba.csv')
+    dump_graph(ba, path)
 
 
 def extended_ba_distributions(graph):
@@ -74,4 +75,5 @@ def compare_degrees_distributions(source_graph):
 
 
 g = graph_from_gephi_edge_list("data/reduced_graph.csv")
-extended_ba_distributions(g)
+extended_barabasi_albert(g, "data/extended_small.csv")
+# extended_ba_distributions(g)

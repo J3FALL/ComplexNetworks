@@ -234,14 +234,21 @@ def dump_sir_history(path, s, i, r, end_time, initial_infected):
 
 def main():
     g = graph_from_gephi_edge_list("data/reduced_graph.csv")
+    # sub = g.subgraph([idx for idx in range(200)])
+    for exp_number in range(3, 6):
+        # exp_1
+        m = transmission_model_factory(0.05, 0.03)
+        number_initial_infections = 10
+        reset(g)  # initialise all nodes to succeptible
+        S, I, R, endtime, ii = run_spread_simulation(g, m, number_initial_infections)
+        dump_sir_history("data/sir/exp_1/sir_history_" + str(exp_number) + ".txt", S, I, R, endtime, ii)
 
-    # sub = g.subgraph([idx for idx in range(500)])
-
-    m = transmission_model_factory(0.05, 0.03)
-    number_initial_infections = 20
-    reset(g)  # initialise all nodes to succeptible
-    S, I, R, endtime, ii = run_spread_simulation(g, m, number_initial_infections)
-    dump_sir_history("data/sir/exp_1/sir_history_2.txt", S, I, R, endtime, ii)
+        # exp_2
+        m = transmission_model_factory(0.6, 0.2)
+        number_initial_infections = 100
+        reset(g)  # initialise all nodes to succeptible
+        S, I, R, endtime, ii = run_spread_simulation(g, m, number_initial_infections)
+        dump_sir_history("data/sir/exp_2/sir_history_" + str(exp_number) + ".txt", S, I, R, endtime, ii)
 
 
 if __name__ == "__main__":
