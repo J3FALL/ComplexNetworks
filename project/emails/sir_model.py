@@ -1,6 +1,7 @@
 # Copyright (c) 2015-2017 Michael Lees, Debraj Roy
 from __future__ import unicode_literals
 
+import io
 import random
 import sys
 from enum import *
@@ -10,7 +11,8 @@ import networkx as nx
 
 from project.emails.distributions import graph_from_gephi_edge_list
 
-plt.interactive(True)
+
+# plt.interactive(True)
 
 
 class State(Enum):
@@ -232,6 +234,42 @@ def dump_sir_history(path, s, i, r, end_time, initial_infected):
         file.write("%s\n" % (" ".join([str(val) for val in param])))
 
 
+def plot_sir_model_results():
+    avg_S = []
+    avg_I = []
+    avg_R = []
+
+    for idx in range(1, 6):
+        sir_file = io.open('data/sir/exp_2/sir_history_' + str(idx) + '.txt')
+
+        time_steps = int(sir_file.readline())
+        S = [int(val) for val in sir_file.readline().split(" ")]
+        I = [int(val) for val in sir_file.readline().split(" ")]
+        R = [int(val) for val in sir_file.readline().split(" ")]
+
+        # for i in range(time_steps):
+        #     avg_S[i] += S[i]
+        #     avg_I[i] += I[i]
+        #     avg_R[i] += R[i]
+        max_infected = max(I)
+
+        sir_file.close()
+
+        times = [t for t in range(time_steps)]
+
+        plt.figure()
+        plt.plot(times, S, label='S')
+        plt.plot(times, I, label='I')
+        plt.plot(times, R, label='R')
+        plt.hlines(max_infected, 0, time_steps, linestyles='--', label='Peak Infected')
+        plt.xlim(0, time_steps)
+        plt.xlabel('Time step')
+        plt.ylabel('Number of nodes')
+        plt.title(r'SIR model propagation with $\alpha = %.2f, \beta = %.2f$' % (0.6, 0.2))
+        plt.legend(loc='upper right')
+        plt.show()
+
+
 def main():
     g = graph_from_gephi_edge_list("data/reduced_graph.csv")
     # sub = g.subgraph([idx for idx in range(200)])
@@ -252,4 +290,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    plot_sir_model_results()

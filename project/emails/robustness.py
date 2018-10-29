@@ -1,5 +1,7 @@
+import io
 import random
 
+import matplotlib.pyplot as plt
 import networkx as nx
 
 
@@ -10,9 +12,12 @@ def graph_from_gephi_edge_list(path):
         return graph
 
 
-def fail(graph):
+def fail(src_graph):
+    graph = nx.Graph(src_graph)
     n = random.choice(list(graph.nodes()))
     graph.remove_node(n)
+
+    return graph
 
 
 def attack_degree(src_graph):
@@ -94,8 +99,7 @@ def robustness_by_fail(src_graph, number_of_runs, nodes_to_remove, measure_frequ
         ga_on_run = []
 
         for iteration in tqdm(range(nodes_to_remove)):
-            graph = attack_degree(graph)
-
+            graph = fail(graph)
             if iteration % measure_frequency == 0:
                 # diameter, avg_path_len = diameter_and_avg_path_length(graph)
                 ga_fraction = giant_component_fraction(graph)
@@ -119,7 +123,6 @@ def robustness_by_fail(src_graph, number_of_runs, nodes_to_remove, measure_frequ
 
 
 def dump_history(file_path, diameters, paths, ga_fractions, fail_mode=False):
-    import io
     file = io.open(file_path, 'w')
 
     if not fail_mode:
@@ -133,9 +136,53 @@ def dump_history(file_path, diameters, paths, ga_fractions, fail_mode=False):
             file.write("%s\n" % (" ".join([str(val) for val in ga_fractions[run]])))
 
 
+import numpy as np
+
+
+def normalized_robustness(data):
+    initial_value = data[0]
+
+    for idx in range(len(data)):
+        data[idx] = data[idx] / initial_value
+
+    return data
+
+
+def plot_robustness():
+    ROBUSTNESS_DIR = "data/robustness/"
+
+    attack_file = io.open(ROBUSTNESS_DIR + "attack/attack_history.txt")
+
+    attack_history = []
+    fail_history = []
+
+    for line in attack_file:
+        attack_history = [float(val) for val in line.split(" ")]
+    attack_file.close()
+
+    attack_history = normalized_robustness(attack_history)
+
+    fail_file = io.open(ROBUSTNESS_DIR + "fail/fail_history.txt")
+    num_of_runs = 5
+    for run in range(num_of_runs):
+        next(fail_file)
+        line = next(fail_file)
+        fail_history.append([float(val) for val in line[:-1].split(" ")])
+
+        fail_history[run] = normalized_robustness(fail_history[run])
+        print(fail_history[run])
+    nodes_removed = np.linspace(0, 100, len(attack_history))
+
+    plt.plot(nodes_removed, attack_history)
+    # plt.plot(nodes_removed, fail_history[0])
+    plt.show()
+
+
 if __name__ == '__main__':
     g = graph_from_gephi_edge_list("data/reduced_graph.csv")
     # sub = g.subgraph([idx for idx in range(200)])
 
     # robustness_by_attack(g, int(0.9 * len(g.nodes())), 50)
-    robustness_by_fail(g, 5, int(0.9 * len(g.nodes())), 50)
+    robustness_by_fail(g, 3, int(0.9 * len(g.nodes())), 50)
+
+    # plot_robustness()

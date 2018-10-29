@@ -221,6 +221,27 @@ def assortativity_distribution(graph):
     plt.savefig(FIGURES_PATH + 'assortativity.png')
 
 
+from math import log
+
+
+def power_law(graph):
+    degs = sorted(list(dict(graph.degree([node for node in graph.nodes()])).values()))
+
+    deg_min = 2
+
+    cum_sum = 0.0
+    for deg in degs:
+        cum_sum += log(deg / deg_min)
+
+    return 1 + len(degs) * pow(cum_sum, -1)
+
+
+def pearson_correlation(graph):
+    return nx.degree_pearson_correlation_coefficient(graph)
+
+
 if __name__ == '__main__':
     g = graph_from_gephi_edge_list("data/reduced_graph.csv")
-    assortativity_distribution(g)
+    # assortativity_distribution(g)
+    print(power_law(g))
+    print(pearson_correlation(g))
