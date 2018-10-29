@@ -173,7 +173,11 @@ def plot_robustness():
         print(fail_history[run])
     nodes_removed = np.linspace(0, 100, len(attack_history))
 
-    plt.plot(nodes_removed, attack_history)
+    plt.plot(nodes_removed, attack_history, label='Attack by degree')
+    plt.xlabel('Removed nodes, %')
+    plt.ylabel('Fraction of nodes')
+    plt.title('Dynamics of the fraction of nodes in giant component')
+    plt.legend()
     # plt.plot(nodes_removed, fail_history[0])
     plt.show()
 
@@ -183,6 +187,6 @@ if __name__ == '__main__':
     # sub = g.subgraph([idx for idx in range(200)])
 
     # robustness_by_attack(g, int(0.9 * len(g.nodes())), 50)
-    robustness_by_fail(g, 3, int(0.9 * len(g.nodes())), 50)
+    # robustness_by_fail(g, 3, int(0.9 * len(g.nodes())), 50)
 
-    # plot_robustness()
+    plot_robustness()
