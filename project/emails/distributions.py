@@ -1,23 +1,22 @@
 import ast
-import csv
-import multiprocessing
 from collections import Counter
+import csv
 from itertools import repeat
+import math
+import multiprocessing
 from multiprocessing import Pool
+import os
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-FILE_PATH = 'data/emails.txt'
-FIGURES_PATH = 'figures/'
-
-import math
+from project.emails import common
 
 
 def graph_instance():
     g = nx.Graph()
-    g.add_edges_from(edges_from_file(FILE_PATH))
+    g.add_edges_from(edges_from_file(common.GRAPH_PATH))
     return g
 
 
@@ -25,7 +24,7 @@ def edges_from_file(path):
     edges = []
     with open(path, 'r') as file:
         for line in file.readlines()[1:]:
-            node_from, node_to = map(int, line.split("\t"))
+            node_from, node_to = map(int, line.split('\t'))
             edges.append([node_from, node_to])
     return edges
 
@@ -68,7 +67,7 @@ def degrees_distribution(graph, show=False, return_values=False):
         plt.xlabel('k')
         plt.ylabel('Count')
         plt.show()
-        plt.savefig(FIGURES_PATH + 'degrees_distribution.png')
+        plt.savefig(os.path.join(common.FIGURES_FOLDER, 'degrees_distribution.png'))
 
     if return_values:
         return deg_x, deg_y
@@ -85,12 +84,12 @@ def giant_components_distribution(graph, dump_reduced=False):
     components = sorted(nx.connected_component_subgraphs(graph), key=len, reverse=True)
 
     if dump_reduced:
-        dump_graph(components[0], path='data/reduced_graph.csv')
+        dump_graph(components[0], path=common.REDUCED_GRAPH_PATH)
 
     for sub in components:
-        print("Component fraction: %.5f with nodes: %d; edges: %d" %
-              (len(sub.nodes()) / len(graph.nodes()), len(sub.nodes()), len(sub.edges())))
-        fractions.append(len(sub.nodes()) / len(graph.nodes()))
+        fraction = len(sub.nodes()) / len(graph.nodes())
+        print(f'Component fraction: {round(fraction, 5)} with nodes: {len(graph.nodes())}; edges: {len(sub.edges())}')
+        fractions.append(fraction)
 
     idxs = np.arange(len(fractions))
 
@@ -101,10 +100,13 @@ def giant_components_distribution(graph, dump_reduced=False):
     plt.ylabel('Fraction')
     plt.yscale('log')
     plt.xticks(idxs[:fractions_to])
-    plt.savefig(FIGURES_PATH + 'components_distribution.png')
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'components_distribution.png'))
 
 
-def clustering_distribution_from_gephi(path="data/gephi_metrics.csv"):
+def clustering_distribution_from_gephi(path=None):
+    if path is None:
+        path = common.GEPHI_METRICS
+
     clustering_coeffs = []
     with open(path) as file:
         reader = csv.DictReader(file, delimiter=',')
@@ -120,10 +122,12 @@ def clustering_distribution_from_gephi(path="data/gephi_metrics.csv"):
     plt.title('Local clustering coefficient distribution')
     plt.ylabel('Count')
     plt.xlabel('Clustering coefficient')
-    plt.savefig(FIGURES_PATH + "clustering_distribution.png")
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'clustering_distribution.png'))
 
 
-def betweenness_distribution_from_gephi(path="data/gephi_metrics.csv"):
+def betweenness_distribution_from_gephi(path=None):
+    if path is None:
+        path = common.GEPHI_METRICS
     btw = []
     with open(path) as file:
         reader = csv.DictReader(file, delimiter=',')
@@ -138,7 +142,7 @@ def betweenness_distribution_from_gephi(path="data/gephi_metrics.csv"):
     plt.title('Betweenness centrality distribution')
     plt.xlabel('Betweenness centrality')
     plt.ylabel('Count')
-    plt.savefig(FIGURES_PATH + "betweenness_distribution.png")
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'betweenness_distribution.png'))
 
 
 def dump_graph(graph, path):
@@ -154,40 +158,35 @@ def graph_from_gephi_edge_list(path):
 
 def all_paths_from(graph, from_idx):
     nodes = graph.nodes()
-    print("nodes: %d/%d" % (from_idx, len(nodes)))
+    print(f'nodes: {from_idx}/{len(nodes)}')
     distances = []
     for to_idx in range(from_idx + 1, len(nodes)):
         try:
-            dist = nx.shortest_path_length(graph, nodes[from_idx], nodes[to_idx])
-            distances.append(dist)
+            distances.append(nx.shortest_path_length(graph, nodes[from_idx], nodes[to_idx]))
         except nx.NetworkXException:
-            print("No path for (%d %d)" % (from_idx, to_idx))
+            print(f'No path for ({from_idx}, {to_idx})')
+
     return [distances]
 
 
 def calculate_shortest_paths(graph):
-    print(multiprocessing.cpu_count())
-    p = Pool(multiprocessing.cpu_count())
-    # this will take awhile
-    distances = p.starmap(all_paths_from, zip(repeat(graph), [i for i in range(len(graph.nodes()))]))
-
-    p.close()
-    p.join()
+    cpu_count = multiprocessing.cpu_count()
+    print(f'CPU count: {cpu_count}')
+    with Pool(multiprocessing.cpu_count()) as p:
+        # this will take awhile
+        distances = p.starmap(all_paths_from, zip(repeat(graph), [i for i in range(len(graph.nodes()))]))
 
     print(len(distances))
-    to_file(distances)
 
-
-def to_file(distances):
-    with open("data/dist.txt", 'w') as file_handler:
+    with open(os.path.join(common.DATA_FOLDER, 'dist.txt'), 'w') as file_handler:
         for item in distances:
-            file_handler.write("{}\n".format(item))
+            file_handler.write(f'{item}\n')
 
 
 def shortest_paths_distribution():
     dist_by_val = Counter()
 
-    with open("data/dist.txt", 'r') as file:
+    with open(os.path.join(common.DATA_FOLDER, 'dist.txt'), 'r') as file:
         idx = 0
         for line in file:
             if idx % 10 == 0 and idx != 0:
@@ -206,7 +205,7 @@ def shortest_paths_distribution():
     plt.title('Distance Distribution')
     plt.xlabel('d')
     plt.ylabel('Count')
-    plt.savefig(FIGURES_PATH + 'distances_distribution.png')
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'distances_distribution.png'))
 
 
 def assortativity_distribution(graph):
@@ -218,22 +217,14 @@ def assortativity_distribution(graph):
     plt.title('Assortativity')
     plt.xlabel('k')
     plt.ylabel('$<k_{nn}>$')
-    plt.savefig(FIGURES_PATH + 'assortativity.png')
-
-
-from math import log
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'assortativity.png'))
 
 
 def power_law(graph):
-    degs = sorted(list(dict(graph.degree([node for node in graph.nodes()])).values()))
-
-    deg_min = 2
-
-    cum_sum = 0.0
-    for deg in degs:
-        cum_sum += log(deg / deg_min)
-
-    return 1 + len(degs) * pow(cum_sum, -1)
+    degrees = sorted(list(dict(graph.degree([node for node in graph.nodes()])).values()))
+    degree_min = 2
+    total_sum = sum([math.log(deg / degree_min) for deg in degrees])
+    return 1 + len(degrees) * pow(total_sum, -1)
 
 
 def pearson_correlation(graph):
@@ -241,7 +232,7 @@ def pearson_correlation(graph):
 
 
 if __name__ == '__main__':
-    g = graph_from_gephi_edge_list("data/reduced_graph.csv")
+    g = graph_from_gephi_edge_list(common.REDUCED_GRAPH_PATH)
     # assortativity_distribution(g)
     print(power_law(g))
     print(pearson_correlation(g))

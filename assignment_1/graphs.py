@@ -4,13 +4,12 @@ import networkx as nx
 
 def draw(g):
     nx.draw(g, with_labels=True)
-
     plt.show()
 
 
 def degree_distribution(g):
     degrees = nx.degree(g)
-    deg_distr = {}
+    deg_distr = dict()
     for key, val in degrees.items():
         # degrees[node[0]] = node[1]
 
@@ -24,9 +23,9 @@ def degree_distribution(g):
 
     plt.bar(deg_distr.keys(), deg_distr.values())
     plt.xticks(list(deg_distr.keys()), [1, 2, 3, 4])
-    plt.title("Degree distribution")
-    plt.xlabel("Degree")
-    plt.ylabel("Count")
+    plt.title('Degree distribution')
+    plt.xlabel('Degree')
+    plt.ylabel('Count')
     plt.show()
 
 
@@ -44,26 +43,27 @@ def distance_distribution(g):
     dd = {key: int(val / 2) for key, val in dd.items()}
     plt.bar(dd.keys(), dd.values())
     plt.xticks(list(dd.keys()), [1, 2, 3])
-    plt.title("Distance distribution")
-    plt.xlabel("Distance")
-    plt.ylabel("Count")
+    plt.title('Distance distribution')
+    plt.xlabel('Distance')
+    plt.ylabel('Count')
     plt.show()
 
 
 def clustering(g):
     cl = nx.clustering(g)
     plt.plot(cl.keys(), cl.values())
-    plt.title("Clustering coefficient distribution")
-    plt.ylabel("Clustering coefficient")
-    plt.xlabel("Node index")
+    plt.title('Clustering coefficient distribution')
+    plt.ylabel('Clustering coefficient')
+    plt.xlabel('Node index')
     plt.show()
 
 
-g = nx.Graph()
-g.add_edges_from([(1, 2), (2, 3), (3, 4), (3, 5), (3, 6), (4, 6), (5, 6)])
+if __name__ == '__main__':
+    g = nx.Graph()
+    g.add_edges_from([(1, 2), (2, 3), (3, 4), (3, 5), (3, 6), (4, 6), (5, 6)])
 
-draw(g)
+    draw(g)
 
-# degree_distribution(g)
-# distance_distribution(g)
-clustering(g)
+    # degree_distribution(g)
+    # distance_distribution(g)
+    clustering(g)
