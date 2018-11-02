@@ -1,4 +1,5 @@
 import os
+from typing import Iterable
 
 ROOT_FOLDER = os.path.dirname(__file__)
 
@@ -20,5 +21,5 @@ ROBUSTNESS_FAIL_HISTORY = os.path.join(ROBUSTNESS_FAIL_FOLDER, 'fail_history.txt
 SIR_FOLDER = os.path.join(DATA_FOLDER, 'sir')
 
 
-def join_values(values, sep=' '):
+def join_values(values: Iterable, sep: str = ' ') -> str:
     return sep.join([str(val) for val in values])

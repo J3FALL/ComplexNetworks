@@ -1,4 +1,8 @@
 import os
+from typing import (
+    List,
+    Tuple
+)
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -12,13 +16,13 @@ from project.emails.distributions import (
 )
 
 
-def simple_barabasi_albert(graph, edges):
+def simple_barabasi_albert(graph: nx.Graph, edges_count: int) -> nx.Graph:
     nodes = len(graph.nodes())
-    ba = nx.barabasi_albert_graph(nodes, edges)
+    ba = nx.barabasi_albert_graph(nodes, edges_count)
     return ba
 
 
-def extended_barabasi_albert(graph, path):
+def extended_barabasi_albert(graph: nx.Graph, path: str) -> None:
     nodes = len(graph.nodes())
     p = 0.837
     q = 0.002
@@ -27,7 +31,7 @@ def extended_barabasi_albert(graph, path):
     dump_graph(ba, path)
 
 
-def extended_ba_distributions(graph):
+def extended_ba_distributions(graph: nx.Graph) -> None:
     ba = nx.read_edgelist(common.EXTENDED_BA_PATH)
 
     ba_deg_x, ba_deg_y = degrees_distribution(ba, show=False, return_values=True)
@@ -47,16 +51,16 @@ def extended_ba_distributions(graph):
     plt.savefig(os.path.join(common.FIGURES_FOLDER, 'models', 'extended_ba_degrees.png'))
 
 
-def compare_degrees_distributions(source_graph):
+def compare_degrees_distributions(source_graph: nx.Graph) -> None:
     avg_edges = average_degree(source_graph)
     print(f'Average degree: {round(avg_edges, 3)}')
 
     labels = []
-    degs = []
+    degs: List[Tuple[float, float]] = []
     for edges in [2, 5, 10, 15]:
         deg_x, deg_y = degrees_distribution(simple_barabasi_albert(source_graph, edges), show=False, return_values=True)
 
-        labels.append('Barabasi-Albert, m = %d' % edges)
+        labels.append(f'Barabasi-Albert, m = {edges}')
         degs.append((deg_x, deg_y))
 
     plt.figure()

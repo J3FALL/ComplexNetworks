@@ -1,15 +1,17 @@
+from typing import Dict
+
 import matplotlib.pyplot as plt
 import networkx as nx
 
 
-def draw(g):
-    nx.draw(g, with_labels=True)
+def draw(graph: nx.Graph) -> None:
+    nx.draw(graph, with_labels=True)
     plt.show()
 
 
-def degree_distribution(g):
-    degrees = nx.degree(g)
-    deg_distr = dict()
+def degree_distribution(graph: nx.Graph) -> None:
+    degrees = nx.degree(graph)
+    deg_distr: Dict[int, int] = dict()
     for key, val in degrees.items():
         # degrees[node[0]] = node[1]
 
@@ -29,9 +31,9 @@ def degree_distribution(g):
     plt.show()
 
 
-def distance_distribution(g):
-    distances = nx.shortest_path_length(g)
-    dd = {}
+def distance_distribution(graph: nx.Graph) -> None:
+    distances = nx.shortest_path_length(graph)
+    dd: Dict[int, int] = dict()
     for i in range(1, 7):
         for j in range(1, 7):
             if distances[i][j] not in dd.keys():
@@ -49,8 +51,8 @@ def distance_distribution(g):
     plt.show()
 
 
-def clustering(g):
-    cl = nx.clustering(g)
+def clustering(graph: nx.Graph) -> None:
+    cl: Dict[int, float] = nx.clustering(graph)
     plt.plot(cl.keys(), cl.values())
     plt.title('Clustering coefficient distribution')
     plt.ylabel('Clustering coefficient')
@@ -59,7 +61,7 @@ def clustering(g):
 
 
 if __name__ == '__main__':
-    g = nx.Graph()
+    g = nx.nx.Graph()
     g.add_edges_from([(1, 2), (2, 3), (3, 4), (3, 5), (3, 6), (4, 6), (5, 6)])
 
     draw(g)

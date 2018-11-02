@@ -5,6 +5,12 @@ from enum import Enum
 import os
 import random
 import sys
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Tuple
+)
 
 from matplotlib import colors
 import matplotlib.pyplot as plt  # import matplotlib for plotting/drawing grpahs
@@ -13,8 +19,12 @@ import networkx as nx
 from project.emails import common
 from project.emails.distributions import graph_from_gephi_edge_list
 
-
 # plt.interactive(True)
+
+Model = Tuple[List[int], bool]
+ModelFactory = Callable[[int, nx.Graph], Model]
+Node = int
+NodeList = List[Node]
 
 
 class State(Enum):
@@ -23,7 +33,7 @@ class State(Enum):
     REMOVED = 2
 
 
-def reset(graph):
+def reset(graph: nx.Graph) -> None:
     """
     :param graph: The graph to reset
     Initialise/reset all the nodes in the network to be susceptible.
@@ -32,7 +42,7 @@ def reset(graph):
     nx.set_node_attributes(graph, name='state', values=State.SUSCEPTIBLE)
 
 
-def initialise_infection(graph, num_to_infect):
+def initialise_infection(graph: nx.Graph, num_to_infect: int) -> NodeList:
     """
     :param graph: Graph to infect nodes on
     :param num_to_infect: Number of nodes to infect on G
@@ -46,7 +56,7 @@ def initialise_infection(graph, num_to_infect):
     return nodes_to_infect
 
 
-def transmission_model_factory(beta=0.03, alpha=0.05):
+def transmission_model_factory(beta: float = 0.03, alpha: float = 0.05) -> ModelFactory:
     """
     :param beta: specifies the rate of infection (movement from S to I)
     :param alpha: specifies the rate of removal (movement from I to R)
@@ -57,8 +67,8 @@ def transmission_model_factory(beta=0.03, alpha=0.05):
     and then be removed.
     """
 
-    def m(n, graph):
-        list_of_neighbours_to_infect = []  # list of neighbours will be infect after executing this step
+    def m(n: int, graph: nx.Graph) -> Model:
+        list_of_neighbours_to_infect: List[int] = []  # list of neighbours will be infect after executing this step
         remove_myself = False  # should I change my state to removed?
         if graph.node[n]['state'] == State.INFECTED:
             # infect susceptible neighbours with probability beta
@@ -73,7 +83,7 @@ def transmission_model_factory(beta=0.03, alpha=0.05):
     return m
 
 
-def apply_infection(graph, list_of_newly_infected, list_of_newly_removed):
+def apply_infection(graph: nx.Graph, list_of_newly_infected: NodeList, list_of_newly_removed: NodeList) -> None:
     """
     :param graph: The graph on which to operate
     :param list_of_newly_infected: A list of nodes to infect (move from S to I)
@@ -87,14 +97,14 @@ def apply_infection(graph, list_of_newly_infected, list_of_newly_removed):
         graph.node[n]['state'] = State.REMOVED
 
 
-def execute_one_step(graph, model):
+def execute_one_step(graph: nx.Graph, model: ModelFactory) -> None:
     """
     :param graph: the Graph on which to execute the infection model
     :param model: model used to infect nodes on G
     executes the infection model on all nodes in G
     """
-    new_nodes_to_infect = []  # nodes to infect after executing all nodes this time step
-    new_nodes_to_remove = []  # nodes to set to removed after this time step
+    new_nodes_to_infect: NodeList = []  # nodes to infect after executing all nodes this time step
+    new_nodes_to_remove: NodeList = []  # nodes to set to removed after this time step
     for n in graph:  # for each node in graph,
         i, remove = model(n, graph)  # execute transmission model on node n
         new_nodes_to_infect = new_nodes_to_infect + i  # add neigbours of n that are infected
@@ -103,7 +113,7 @@ def execute_one_step(graph, model):
     apply_infection(graph, new_nodes_to_infect, new_nodes_to_remove)
 
 
-def get_infection_stats(graph):
+def get_infection_stats(graph: nx.Graph) -> Tuple[NodeList, NodeList, NodeList]:
     """
     :param graph: the Graph on which to execute the infection model
     :returns: a tuple containing three lists of susceptible, infected and removed nodes.
@@ -122,7 +132,7 @@ def get_infection_stats(graph):
     return susceptible, infected, removed  # return the three lists.
 
 
-def print_infection_stats(graph):
+def print_infection_stats(graph: nx.Graph) -> None:
     """
     :param graph: the Graph on which to execute the infection model
     Prints the number of susceptible, infected and removed nodes in graph G.
@@ -131,7 +141,10 @@ def print_infection_stats(graph):
     print(f'susceptible: {len(s)} Infected: {len(i)} Removed {len(r)}')
 
 
-def run_spread_simulation(graph, model, initial_infection_count, run_visualise=False):
+def run_spread_simulation(graph: nx.Graph,
+                          model: ModelFactory,
+                          initial_infection_count: int,
+                          run_visualise: bool = False) -> Tuple[NodeList, NodeList, NodeList, int, NodeList]:
     """
     :param graph: the Graph on which to execute the infection model
     :param model: model used to infect nodes on G
@@ -147,9 +160,9 @@ def run_spread_simulation(graph, model, initial_infection_count, run_visualise=F
     """
     initially_infected = initialise_infection(graph, initial_infection_count)
 
-    s_results = []
-    i_results = []
-    r_results = []
+    s_results: NodeList = []
+    i_results: NodeList = []
+    r_results: NodeList = []
 
     dt = 0
     susceptible, infected, removed = get_infection_stats(graph)
@@ -165,12 +178,14 @@ def run_spread_simulation(graph, model, initial_infection_count, run_visualise=F
         r_results.append(len(removed))  # add R counts to our final results
         sys.stderr.write(f'\rInfected: {len(infected)} time step: {dt}')
         sys.stderr.flush()
+
         if run_visualise:  # If run visualise is true, we output the graph to file
             draw_network_to_file(graph, pos, dt, initially_infected)
+
     return s_results, i_results, r_results, dt, initially_infected  # return our results for plotting
 
 
-def plot_infection(susceptible, infected, removed, graph):
+def plot_infection(susceptible: List[int], infected: List[int], removed: List[int], graph: nx.Graph) -> None:
     """
     :param susceptible: time-ordered list from simulation output indicating how susceptible count changes over time
     :param infected: time-ordered list from simulation output indicating how infected count changes over time
@@ -201,7 +216,7 @@ def plot_infection(susceptible, infected, removed, graph):
     plt.show()
 
 
-def draw_network_to_file(graph, pos, t, initially_infected):
+def draw_network_to_file(graph: nx.Graph, pos: Dict, t: int, initially_infected: NodeList) -> None:
     """
     :param graph: Graph to draw to png file
     :param pos: position defining how to layout graph
@@ -226,14 +241,15 @@ def draw_network_to_file(graph, pos, t, initially_infected):
     plt.clf()
 
 
-def dump_sir_history(path, s, i, r, end_time, initial_infected):
+def dump_sir_history(path: str, s: NodeList, i: NodeList, r: NodeList, end_time: int, initial_infected: NodeList
+                     ) -> None:
     with open(path, 'w') as file:
         file.write(f'{end_time}\n')
         for param in [s, i, r, initial_infected]:
             file.write(f'{common.join_values(param)}\n')
 
 
-def plot_sir_model_results():
+def plot_sir_model_results() -> None:
     # avg_S = []
     # avg_I = []
     # avg_R = []
@@ -268,12 +284,12 @@ def plot_sir_model_results():
         plt.show()
 
 
-def main():
-    g = graph_from_gephi_edge_list(common.REDUCED_GRAPH_PATH)
+def main() -> None:
+    g: nx.Graph = graph_from_gephi_edge_list(common.REDUCED_GRAPH_PATH)
     # sub = g.subgraph([idx for idx in range(200)])
     for exp_number in range(3, 6):
         # exp_1
-        m = transmission_model_factory(0.05, 0.03)
+        m: ModelFactory = transmission_model_factory(0.05, 0.03)
         number_initial_infections = 10
         reset(g)  # initialise all nodes to susceptible
         susceptible, infected, removed, endtime, ii = run_spread_simulation(g, m, number_initial_infections)
