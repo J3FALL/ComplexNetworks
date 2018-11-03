@@ -13,13 +13,12 @@ from typing import (
 )
 
 from matplotlib import colors
-import matplotlib.pyplot as plt  # import matplotlib for plotting/drawing grpahs
+import matplotlib.pyplot as plt
 import networkx as nx
 
 from project.emails import common
 from project.emails.distributions import graph_from_gephi_edge_list
 
-# plt.interactive(True)
 
 Model = Tuple[List[int], bool]
 ModelFactory = Callable[[int, nx.Graph], Model]
@@ -250,10 +249,6 @@ def dump_sir_history(path: str, s: NodeList, i: NodeList, r: NodeList, end_time:
 
 
 def plot_sir_model_results() -> None:
-    # avg_S = []
-    # avg_I = []
-    # avg_R = []
-
     for idx in range(1, 6):
         with open(os.path.join(common.SIR_FOLDER, 'exp_2', f'sir_history_{idx}.txt')) as sir_file:
             time_steps = int(sir_file.readline())
@@ -261,10 +256,6 @@ def plot_sir_model_results() -> None:
             infected = [int(val) for val in sir_file.readline().split()]
             recovered = [int(val) for val in sir_file.readline().split()]
 
-        # for i in range(time_steps):
-        #     avg_S[i] += susceptible[i]
-        #     avg_I[i] += infected[i]
-        #     avg_R[i] += recovered[i]
         max_infected = max(infected)
 
         sir_file.close()
@@ -286,7 +277,7 @@ def plot_sir_model_results() -> None:
 
 def main() -> None:
     g: nx.Graph = graph_from_gephi_edge_list(common.REDUCED_GRAPH_PATH)
-    # sub = g.subgraph([idx for idx in range(200)])
+
     for exp_number in range(3, 6):
         # exp_1
         m: ModelFactory = transmission_model_factory(0.05, 0.03)

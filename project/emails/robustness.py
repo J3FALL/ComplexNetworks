@@ -72,10 +72,10 @@ def robustness_by_attack(src_graph: nx.Graph, nodes_to_remove: int, measure_freq
         graph = attack_degree(graph)
 
         if iteration % measure_frequency == 0:
-            # diameter, avg_path_len = diameter_and_avg_path_length(graph)
-            # diameters_history.append(diameter)
-            # path_len_history.append(avg_path_len)
+            diameter, avg_path_len = diameter_and_avg_path_length(graph)
 
+            diameters_history.append(diameter)
+            path_len_history.append(avg_path_len)
             ga_fraction_history.append(giant_component_fraction(graph))
 
     print('---- Done: Robustness Check ---- \n')
@@ -165,15 +165,14 @@ def plot_robustness() -> None:
     plt.ylabel('Fraction of nodes')
     plt.title('Dynamics of the fraction of nodes in giant component')
     plt.legend()
-    # plt.plot(nodes_removed, fail_history[0])
+    plt.plot(nodes_removed, fail_history[0])
     plt.show()
 
 
 if __name__ == '__main__':
     g = graph_from_gephi_edge_list(common.REDUCED_GRAPH_PATH)
-    # sub = g.subgraph([idx for idx in range(200)])
 
-    # robustness_by_attack(g, int(0.9 * len(g.nodes())), 50)
-    # robustness_by_fail(g, 3, int(0.9 * len(g.nodes())), 50)
+    robustness_by_attack(g, int(0.9 * len(g.nodes())), 50)
+    robustness_by_fail(g, 3, int(0.9 * len(g.nodes())), 50)
 
     plot_robustness()

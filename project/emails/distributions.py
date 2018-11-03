@@ -199,7 +199,7 @@ def shortest_paths_distribution() -> None:
             data = ast.literal_eval(line)[0]
             for dist in data:
                 dist_by_val[dist] += 1
-            # print(dist_by_val)
+
             idx += 1
 
     dist_x, dist_y = log_binning(dict(dist_by_val), 50)
@@ -238,6 +238,6 @@ def pearson_correlation(graph: nx.Graph) -> float:
 
 if __name__ == '__main__':
     g = graph_from_gephi_edge_list(common.REDUCED_GRAPH_PATH)
-    # assortativity_distribution(g)
+    assortativity_distribution(g)
     print(power_law(g))
     print(pearson_correlation(g))
