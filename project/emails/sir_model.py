@@ -298,5 +298,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    # main()
     plot_sir_model_results()

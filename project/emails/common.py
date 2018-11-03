@@ -1,7 +1,7 @@
 import os
 from typing import Iterable
 
-ROOT_FOLDER = os.path.dirname(__file__)
+ROOT_FOLDER = os.path.dirname(os.path.dirname(__file__))
 
 FIGURES_FOLDER = os.path.join(ROOT_FOLDER, 'figures')
 DATA_FOLDER = os.path.join(ROOT_FOLDER, 'data')
