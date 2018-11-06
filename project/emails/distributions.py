@@ -1,40 +1,43 @@
 import ast
-import csv
-import multiprocessing
 from collections import Counter
+import csv
 from itertools import repeat
+import math
+import multiprocessing
 from multiprocessing import Pool
+import os
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Tuple
+)
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-FILE_PATH = 'data/emails.txt'
-FIGURES_PATH = 'figures/'
+from project.emails import common
 
-import math
+Edge = Tuple[int, int]
 
 
-def graph_instance():
+def graph_instance() -> nx.Graph:
     g = nx.Graph()
-    g.add_edges_from(edges_from_file(FILE_PATH))
+    g.add_edges_from(edges_from_file(common.GRAPH_PATH))
     return g
 
 
-def edges_from_file(path):
-    edges = []
+def edges_from_file(path: str) -> List[Edge]:
+    edges: List[Edge] = []
     with open(path, 'r') as file:
         for line in file.readlines()[1:]:
-            node_from, node_to = map(int, line.split("\t"))
-            edges.append([node_from, node_to])
+            node_from, node_to = map(int, line.split('\t'))
+            edges.append((node_from, node_to))
     return edges
 
 
-def drop_zeros(a_list):
-    return [i for i in a_list if i > 0]
-
-
-def log_binning(counter_dict, bin_count=35):
+def log_binning(counter_dict: Dict, bin_count: int = 35) -> Tuple[float, float]:
     keys = counter_dict.keys()
     values = counter_dict.values()
 
@@ -42,7 +45,7 @@ def log_binning(counter_dict, bin_count=35):
     max_y = math.log10(max(values))
     max_base = max([max_x, max_y])
 
-    min_x = math.log10(min(drop_zeros(keys)))
+    min_x = math.log10(min(filter(lambda v: v > 0, keys)))
 
     bins = np.logspace(min_x, max_base, num=bin_count)
 
@@ -54,7 +57,8 @@ def log_binning(counter_dict, bin_count=35):
     return bin_means_x, bin_means_y
 
 
-def degrees_distribution(graph, show=False, return_values=False):
+def degrees_distribution(graph: nx.Graph, show: bool = False,
+                         return_values: bool = False) -> Optional[Tuple[float, float]]:
     degs = sorted(list(dict(graph.degree([node for node in graph.nodes()])).values()), reverse=True)
 
     deg_x, deg_y = log_binning(dict(Counter(degs)), 50)
@@ -68,29 +72,30 @@ def degrees_distribution(graph, show=False, return_values=False):
         plt.xlabel('k')
         plt.ylabel('Count')
         plt.show()
-        plt.savefig(FIGURES_PATH + 'degrees_distribution.png')
+        plt.savefig(os.path.join(common.FIGURES_FOLDER, 'degrees_distribution.png'))
 
     if return_values:
         return deg_x, deg_y
+    return None
 
 
-def average_degree(graph):
+def average_degree(graph: nx.Graph) -> float:
     degs = list(dict(graph.degree([node for node in graph.nodes()])).values())
     return sum(degs) / len(graph.nodes())
 
 
-def giant_components_distribution(graph, dump_reduced=False):
+def giant_components_distribution(graph: nx.Graph, dump_reduced: bool = False) -> None:
     fractions = []
 
     components = sorted(nx.connected_component_subgraphs(graph), key=len, reverse=True)
 
     if dump_reduced:
-        dump_graph(components[0], path='data/reduced_graph.csv')
+        dump_graph(components[0], path=common.REDUCED_GRAPH_PATH)
 
     for sub in components:
-        print("Component fraction: %.5f with nodes: %d; edges: %d" %
-              (len(sub.nodes()) / len(graph.nodes()), len(sub.nodes()), len(sub.edges())))
-        fractions.append(len(sub.nodes()) / len(graph.nodes()))
+        fraction = len(sub.nodes()) / len(graph.nodes())
+        print(f'Component fraction: {round(fraction, 5)} with nodes: {len(graph.nodes())}; edges: {len(sub.edges())}')
+        fractions.append(fraction)
 
     idxs = np.arange(len(fractions))
 
@@ -101,10 +106,13 @@ def giant_components_distribution(graph, dump_reduced=False):
     plt.ylabel('Fraction')
     plt.yscale('log')
     plt.xticks(idxs[:fractions_to])
-    plt.savefig(FIGURES_PATH + 'components_distribution.png')
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'components_distribution.png'))
 
 
-def clustering_distribution_from_gephi(path="data/gephi_metrics.csv"):
+def clustering_distribution_from_gephi(path: Optional[str] = None) -> None:
+    if path is None:
+        path = common.GEPHI_METRICS
+
     clustering_coeffs = []
     with open(path) as file:
         reader = csv.DictReader(file, delimiter=',')
@@ -120,15 +128,16 @@ def clustering_distribution_from_gephi(path="data/gephi_metrics.csv"):
     plt.title('Local clustering coefficient distribution')
     plt.ylabel('Count')
     plt.xlabel('Clustering coefficient')
-    plt.savefig(FIGURES_PATH + "clustering_distribution.png")
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'clustering_distribution.png'))
 
 
-def betweenness_distribution_from_gephi(path="data/gephi_metrics.csv"):
-    btw = []
+def betweenness_distribution_from_gephi(path: Optional[str] = None) -> None:
+    if path is None:
+        path = common.GEPHI_METRICS
+
     with open(path) as file:
         reader = csv.DictReader(file, delimiter=',')
-        for line in reader:
-            btw.append(float(line['betweenesscentrality']))
+        btw = [float(line['betweenesscentrality']) for line in reader]
 
     plt.figure()
     btw_x, btw_y = log_binning(dict(Counter(btw)), 70)
@@ -138,56 +147,51 @@ def betweenness_distribution_from_gephi(path="data/gephi_metrics.csv"):
     plt.title('Betweenness centrality distribution')
     plt.xlabel('Betweenness centrality')
     plt.ylabel('Count')
-    plt.savefig(FIGURES_PATH + "betweenness_distribution.png")
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'betweenness_distribution.png'))
 
 
-def dump_graph(graph, path):
+def dump_graph(graph: nx.Graph, path: str) -> None:
     nx.write_edgelist(graph, path, data=False)
 
 
-def graph_from_gephi_edge_list(path):
+def graph_from_gephi_edge_list(path: str) -> nx.Graph:
     with open(path, 'rb') as file:
         next(file, '')
         graph = nx.read_edgelist(file, nodetype=int)
         return graph
 
 
-def all_paths_from(graph, from_idx):
+def all_paths_from(graph: nx.Graph, from_idx: int) -> List[List[float]]:
     nodes = graph.nodes()
-    print("nodes: %d/%d" % (from_idx, len(nodes)))
-    distances = []
+    print(f'nodes: {from_idx}/{len(nodes)}')
+    distances: List[float] = []
     for to_idx in range(from_idx + 1, len(nodes)):
         try:
-            dist = nx.shortest_path_length(graph, nodes[from_idx], nodes[to_idx])
-            distances.append(dist)
+            distances.append(nx.shortest_path_length(graph, nodes[from_idx], nodes[to_idx]))
         except nx.NetworkXException:
-            print("No path for (%d %d)" % (from_idx, to_idx))
+            print(f'No path for ({from_idx}, {to_idx})')
+
     return [distances]
 
 
-def calculate_shortest_paths(graph):
-    print(multiprocessing.cpu_count())
-    p = Pool(multiprocessing.cpu_count())
-    # this will take awhile
-    distances = p.starmap(all_paths_from, zip(repeat(graph), [i for i in range(len(graph.nodes()))]))
-
-    p.close()
-    p.join()
+def calculate_shortest_paths(graph: nx.Graph) -> None:
+    cpu_count = multiprocessing.cpu_count()
+    print(f'CPU count: {cpu_count}')
+    with Pool(multiprocessing.cpu_count()) as p:
+        # this will take awhile
+        distances = p.starmap(all_paths_from, zip(repeat(graph), [i for i in range(len(graph.nodes()))]))
 
     print(len(distances))
-    to_file(distances)
 
-
-def to_file(distances):
-    with open("data/dist.txt", 'w') as file_handler:
+    with open(os.path.join(common.DATA_FOLDER, 'dist.txt'), 'w') as file_handler:
         for item in distances:
-            file_handler.write("{}\n".format(item))
+            file_handler.write(f'{item}\n')
 
 
-def shortest_paths_distribution():
-    dist_by_val = Counter()
+def shortest_paths_distribution() -> None:
+    dist_by_val: Counter = Counter()
 
-    with open("data/dist.txt", 'r') as file:
+    with open(os.path.join(common.DATA_FOLDER, 'dist.txt'), 'r') as file:
         idx = 0
         for line in file:
             if idx % 10 == 0 and idx != 0:
@@ -195,7 +199,7 @@ def shortest_paths_distribution():
             data = ast.literal_eval(line)[0]
             for dist in data:
                 dist_by_val[dist] += 1
-            # print(dist_by_val)
+
             idx += 1
 
     dist_x, dist_y = log_binning(dict(dist_by_val), 50)
@@ -206,10 +210,10 @@ def shortest_paths_distribution():
     plt.title('Distance Distribution')
     plt.xlabel('d')
     plt.ylabel('Count')
-    plt.savefig(FIGURES_PATH + 'distances_distribution.png')
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'distances_distribution.png'))
 
 
-def assortativity_distribution(graph):
+def assortativity_distribution(graph: nx.Graph) -> None:
     assorts = sorted(nx.average_degree_connectivity(graph).items())
     assort_x, assort_y = log_binning(dict(assorts), 40)
 
@@ -218,30 +222,22 @@ def assortativity_distribution(graph):
     plt.title('Assortativity')
     plt.xlabel('k')
     plt.ylabel('$<k_{nn}>$')
-    plt.savefig(FIGURES_PATH + 'assortativity.png')
+    plt.savefig(os.path.join(common.FIGURES_FOLDER, 'assortativity.png'))
 
 
-from math import log
+def power_law(graph: nx.Graph) -> float:
+    degrees = sorted(list(dict(graph.degree([node for node in graph.nodes()])).values()))
+    degree_min = 2
+    total_sum = sum([math.log(deg / degree_min) for deg in degrees])
+    return 1 + len(degrees) * pow(total_sum, -1)
 
 
-def power_law(graph):
-    degs = sorted(list(dict(graph.degree([node for node in graph.nodes()])).values()))
-
-    deg_min = 2
-
-    cum_sum = 0.0
-    for deg in degs:
-        cum_sum += log(deg / deg_min)
-
-    return 1 + len(degs) * pow(cum_sum, -1)
-
-
-def pearson_correlation(graph):
+def pearson_correlation(graph: nx.Graph) -> float:
     return nx.degree_pearson_correlation_coefficient(graph)
 
 
 if __name__ == '__main__':
-    g = graph_from_gephi_edge_list("data/reduced_graph.csv")
-    # assortativity_distribution(g)
+    g = graph_from_gephi_edge_list(common.REDUCED_GRAPH_PATH)
+    assortativity_distribution(g)
     print(power_law(g))
     print(pearson_correlation(g))
