@@ -17,7 +17,7 @@ Network metrics were obtained mostly using [NetworkX] framework and [Gephi].
 To model the network simple and extended Barabasi-Albert model were taken.
 Propagation studying were performed with simple SIR-model.
 
-All resulted figures (most of its were log-binned) can be found in [figures](figures/) project directory.
+All resulted figures (most of its were log-binned) can be found in [figures](project/figures/) project directory.
 
 
 ## Lessons We've learned while studying Complex Networks
